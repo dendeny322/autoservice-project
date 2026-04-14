@@ -247,14 +247,14 @@ elif selected_module == "🗂️ Справочники (Клиенты)":
     st.subheader("📋 Картотека")
     if st.button("🔄 Принудительно обновить таблицу"): st.cache_data.clear()
     
-    try:
-        # Добавляем car_id в выборку, чтобы видеть ID машины для заказа
+   try:
         query_view = """
         SELECT 
             car_id AS "ID Авто",
             full_name AS "ФИО Клиента", 
             phone AS "Телефон", 
             license_plate AS "Гос. номер", 
+            vin_number AS "VIN код", -- Вернули вывод VIN-кода!
             brand_name || ' ' || model_name AS "Марка и Модель"
         FROM view_client_cars;
         """
