@@ -247,7 +247,7 @@ elif selected_module == "🗂️ Справочники (Клиенты)":
     st.subheader("📋 Картотека")
     if st.button("🔄 Принудительно обновить таблицу"): st.cache_data.clear()
     
-   try:
+    try:
         query_view = """
         SELECT 
             car_id AS "ID Авто",
