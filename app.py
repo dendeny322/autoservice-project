@@ -412,21 +412,26 @@ elif selected_module == "👥 Мастера":
     except Exception as e:
         st.error(f"Сбой загрузки данных: {e}")
 # ==========================================
-# КАСТОМНЫЙ ДИЗАЙН (ФОН)
+# КАСТОМНЫЙ ДИЗАЙН (ФОН И ЦВЕТ ТЕКСТА)
 # ==========================================
 page_bg_img = """
 <style>
 /* Основной фон страницы */
 [data-testid="stAppViewContainer"] {
-    background-image: url("https://t3.ftcdn.net/jpg/03/74/47/06/360_F_374470697_U8bjzpfods9n4EUevpHb2WEMXqiuo408.jpg");
+    background-image: url("https://images.unsplash.com/photo-1616423640778-28d1b53229bd?q=80&w=1920&auto=format&fit=crop");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
 }
 
-/* Полупрозрачный фон для бокового меню, чтобы оно не сливалось */
+/* Полупрозрачный темный фон для бокового меню */
 [data-testid="stSidebar"] {
-    background-color: rgba(15, 17, 22, 0.85); 
+    background-color: rgba(15, 17, 22, 0.9); 
+}
+
+/* МАГИЯ ЗДЕСЬ: Принудительно делаем весь текст в боковом меню белым */
+[data-testid="stSidebar"] * {
+    color: white !important;
 }
 
 /* Делаем верхнюю полоску (header) прозрачной */
