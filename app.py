@@ -411,3 +411,28 @@ elif selected_module == "👥 Мастера":
         st.dataframe(df_emp, use_container_width=True, hide_index=True)
     except Exception as e:
         st.error(f"Сбой загрузки данных: {e}")
+# ==========================================
+# КАСТОМНЫЙ ДИЗАЙН (ФОН)
+# ==========================================
+page_bg_img = """
+<style>
+/* Основной фон страницы */
+[data-testid="stAppViewContainer"] {
+    background-image: url("https://images.unsplash.com/photo-1616423640778-28d1b53229bd?q=80&w=1920&auto=format&fit=crop");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Полупрозрачный фон для бокового меню, чтобы оно не сливалось */
+[data-testid="stSidebar"] {
+    background-color: rgba(15, 17, 22, 0.85); 
+}
+
+/* Делаем верхнюю полоску (header) прозрачной */
+[data-testid="stHeader"] {
+    background-color: rgba(0, 0, 0, 0);
+}
+</style>
+"""
+st.markdown(page_bg_img, unsafe_allow_html=True)
