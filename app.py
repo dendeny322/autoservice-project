@@ -418,7 +418,7 @@ page_bg_img = """
 <style>
 /* Основной фон страницы */
 [data-testid="stAppViewContainer"] {
-    background-image: url("https://i.pinimg.com/originals/47/18/51/471851ab77a4b69cee7ccd67c6407afd.jpg?nii=t");
+    background-image: url("https://yandex-images.clstorage.net/wW9FP7374/c13d893VVeR/MuBhf80mNDyXyMtyOFY4b248zxEf23OdNs14rEduohwNIIpbK-9moek2RUAC_32_8hZeD99xlehrj37V99PCQeSx9S4at_Q90toJ4T7VPGo9O5_UT10ynOCOeXec8ioUVupSxKKwOGco4YTXEWxvbOgN21KE6UX56pN9UKbAl1C4rST6CXR0fluSiff9kvWq9H5D1g3bqdt1Fmh-1bsrVdytHESj-3AvLqlGHVL05-pnC0-ZTyhEeOsV-BLoQ9Zef2Mhc8F_MrBbl4jwcF5wJD8zx9ENlWJUe5elfBu8LBAUK93GLf-xbKBmg5obcirvK0rLmgzjRLUv1TQWbgYcGfij6XaAs753khcFf_WS_2G0t4xVQVStGTwZZzHQdGfdWuXchi82NqXlosQbm_LhbWwHRdkB6ci8K5W0X2wCk5E_Y2G-QTw8eJabDb-5Hnwr97VA3wYdoJc93i92WfwumdXp1E3vd36k4utFXRX-4a3sQYOSi2POvuHSeBfqj9cS_mzjOkK3fvUdWku5tpR66fS8zhWB0-EZMZPp-Zc-IxFc75wNK_rw4SSohpXVuyCoJkPP2sthyH9qVTsUZc-dVzNur3gDtHN0nhuF8rMWu2twvghWx1wnG_nYpXJedqkYVShYSGuzuKplIEGfVPplZKxMRxpD7EE1KNA4G2QOGxYxJ2Nwgrm3MN8aifj-k39rsTsAVIzS6tay0G6zVnfpFhHll4-tMvXspe4EVZx8rmCsywGYgu2If6_Sc1Stx9UQ-KUjtsszsfRWUQ-0Nd_8p3VxBJHCGuXfP5dkupezYdXQoJyCpnF_KetpDhjX-mljrsuGGMItg_Hm1DMbaYRVn3AlpfuDNju4FtfEMbCeNOT5cQSWCdJiXvMT4bLQ_GHZmiSbjq1-eiilYYcU0vZg4erHCJYBqca_aNm7XW_KnJR4qCx1x_fzNtlWh7kzl39jM_nDVYARbZYzEKs6FY");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
