@@ -57,7 +57,7 @@ if not st.session_state.logged_in:
                 elif username_input == "manager" and password_input == "manager":
                     st.session_state.logged_in = True
                     st.session_state.role = "Менеджер"
-                    st.session_state.username = "Мастер-приемщик (Иванов Е.А.)"
+                    st.session_state.username = "Мастер-приемщик (Иванов Иван)"
                     st.rerun()
                 else:
                     st.error("❌ Неверный логин или пароль!")
