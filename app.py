@@ -282,4 +282,97 @@ elif selected_module == "📦 Склад":
                         cur = conn.cursor()
                         # Использование механизма UPSERT для обновления остатков существующей номенклатуры
                         upsert_query = """
-                        INSERT INTO Parts (article, name, price
+                        INSERT INTO Parts (article, name, price, stock) 
+                        VALUES (%s, %s, %s, %s)
+                        ON CONFLICT (article) 
+                        DO UPDATE SET 
+                            stock = Parts.stock + EXCLUDED.stock,
+                            price = EXCLUDED.price;
+                        """
+                        cur.execute(upsert_query, (new_article, new_name, new_price, new_stock))
+                        st.success(f"Остатки по артикулу «{new_article}» актуализированы.")
+                        st.cache_data.clear() 
+                    except Exception as e:
+                        st.error(f"Системная ошибка БД: {e}")
+                        st.cache_resource.clear() 
+                else:
+                    st.warning("Требуется указать Артикул и Наименование.")
+
+    st.markdown("---")
+    st.subheader("Текущие складские остатки")
+    if st.button("🔄 Обновить ведомость"): st.cache_data.clear()
+
+    try:
+        df_parts = pd.read_sql("SELECT part_id AS \"ID\", article AS \"Артикул\", name AS \"Наименование\", price AS \"Цена\", stock AS \"Остаток\" FROM Parts ORDER BY part_id;", conn)
+        st.dataframe(df_parts, use_container_width=True, hide_index=True)
+    except Exception as e:
+        st.error("Ошибка извлечения данных.")
+        st.cache_resource.clear()
+
+# ==========================================
+# 5. АУДИТ БЕЗОПАСНОСТИ (Только для Админа)
+# ==========================================
+elif selected_module == "🛡️ Журнал аудита":
+    st.title("🛡️ Журнал безопасности транзакций")
+    st.markdown("Мониторинг критических DML-операций, зафиксированных серверными триггерами.")
+    try:
+        df_audit = pd.read_sql("SELECT log_id AS \"ID\", action_date::timestamp(0) AS \"Дата\", db_user AS \"Роль СУБД\", action_type AS \"Операция\", table_name AS \"Отношение\", record_info AS \"Детализация\" FROM audit_log ORDER BY action_date DESC;", conn)
+        st.dataframe(df_audit, use_container_width=True, hide_index=True)
+    except:
+        st.info("В журнале аудита отсутствуют записи.")
+
+# ==========================================
+# 6. УПРАВЛЕНИЕ ПЕРСОНАЛОМ (Мастера)
+# ==========================================
+elif selected_module == "👥 Мастера":
+    st.title("👥 Управление производственным персоналом") 
+    st.markdown("Справочник сотрудников и штатное расписание СТО.")
+
+    with st.expander("➕ Регистрация нового специалиста"):
+        cur = conn.cursor()
+        cur.execute("SELECT position_id, title FROM Positions;")
+        positions = cur.fetchall()
+
+        if not positions:
+            st.warning("Внимание: требуется предварительное заполнение справочника должностей.")
+            with st.form("add_pos"):
+                pos_title = st.text_input("Наименование должности")
+                pos_salary = st.number_input("Базовая ставка (руб)", min_value=15000.0, step=5000.0)
+                if st.form_submit_button("Внести в штатное расписание"):
+                    cur.execute("INSERT INTO Positions (title, base_salary) VALUES (%s, %s)", (pos_title, pos_salary))
+                    st.success("Справочник должностей обновлен. Перезагрузите страницу.")
+        else:
+            pos_dict = {title: pid for pid, title in positions}
+            with st.form("add_employee", clear_on_submit=True):
+                emp_name = st.text_input("ФИО Специалиста *")
+                emp_phone = st.text_input("Контактный телефон *")
+                emp_pos = st.selectbox("Квалификация (Должность) *", options=list(pos_dict.keys()))
+
+                if st.form_submit_button("Зарегистрировать сотрудника", type="primary"):
+                    if emp_name and emp_phone:
+                        try:
+                            cur.execute("INSERT INTO Employees (full_name, phone, position_id) VALUES (%s, %s, %s)",
+                                        (emp_name, emp_phone, pos_dict[emp_pos]))
+                            st.success(f"Запись сотрудника '{emp_name}' успешно создана.")
+                            st.cache_data.clear()
+                        except Exception as e:
+                            st.error(f"Ошибка записи: {e}")
+                    else:
+                        st.warning("Требуется заполнение обязательных реквизитов.")
+
+    st.markdown("---")
+    st.subheader("📋 Реестр персонала")
+    if st.button("🔄 Обновить реестр"): st.cache_data.clear()
+
+    # Запрос с объединением данных из связанных таблиц (Employees и Positions)
+    query_emp = """
+    SELECT e.employee_id AS "ID", e.full_name AS "ФИО", e.phone AS "Телефон",
+           p.title AS "Квалификация", p.base_salary AS "Оклад (руб)"
+    FROM Employees e JOIN Positions p ON e.position_id = p.position_id
+    ORDER BY e.employee_id;
+    """
+    try:
+        df_emp = pd.read_sql(query_emp, conn)
+        st.dataframe(df_emp, use_container_width=True, hide_index=True)
+    except Exception as e:
+        st.error(f"Сбой загрузки данных: {e}")
