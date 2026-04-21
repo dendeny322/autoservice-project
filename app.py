@@ -418,7 +418,7 @@ page_bg_img = """
 <style>
 /* Основной фон страницы */
 [data-testid="stAppViewContainer"] {
-    background-image: url(https://t3.ftcdn.net/jpg/03/74/47/06/360_F_374470697_U8bjzpfods9n4EUevpHb2WEMXqiuo408.jpg");
+    background-image: url("https://t3.ftcdn.net/jpg/03/74/47/06/360_F_374470697_U8bjzpfods9n4EUevpHb2WEMXqiuo408.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
