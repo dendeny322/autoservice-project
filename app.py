@@ -77,7 +77,7 @@ if st.sidebar.button("🚪 Выйти из системы", use_container_width=
 st.sidebar.divider()
 
 # Формирование пунктов меню на основе роли пользователя
-menu_options = ["📊 Рабочий стол", "📄 Документы (Заказы)", "🗂️ Справочники (Клиенты)", "📦 Склад", "👥 Мастера"]
+menu_options = ["📊 Рабочий стол", "📄 Документы (Заказы)", "🗂️ Справочники", "📦 Склад", "👥 Мастера"]
 
 if st.session_state.role == "Администратор":
     menu_options.append("🛡️ Журнал аудита")
@@ -204,85 +204,95 @@ elif selected_module == "📄 Документы (Заказы)":
                 else: st.info("Запчасти в заказ не добавлены.")
             except: pass
 # ==========================================
-# 3. СПРАВОЧНИКИ (База клиентов)
+# 3. СПРАВОЧНИКИ (База клиентов и Прайс-лист)
 # ==========================================
-elif selected_module == "🗂️ Справочники (Клиенты)":
-    st.title("🗂️ Картотека клиентов и автомобилей")
-    st.markdown("Модуль ввода данных и просмотра результатов представления `view_client_cars`.")
+elif selected_module == "🗂️ Справочники":
+    st.title("🗂️ Управление справочниками")
     
-    # Блок регистрации (CRUD - Create)
-    with st.form("add_client_car", clear_on_submit=True): 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("**Персональные данные**")
-            fio = st.text_input("ФИО Клиента *")
-            phone = st.text_input("Контактный телефон *")
-            
-        with col2:
-            st.markdown("**Технические параметры ТС**")
-            vin = st.text_input("VIN-код (17 символов) *", max_chars=17)
-            plate = st.text_input("Регистрационный знак *")
-            
-            colA, colB = st.columns(2)
-            with colA:
-                brand_input = st.text_input("Марка *")
-            with colB:
-                model_input = st.text_input("Модель *")
-            
-        if st.form_submit_button("Внести в базу", type="primary"):
-            if fio and phone and vin and plate and brand_input and model_input:
-                try:
-                    cur = conn.cursor()
-                    
-                    # Проверка наличия марки в справочнике Brand_Model
-                    cur.execute("SELECT brand_id FROM Brand_Model WHERE brand_name = %s AND model_name = %s", (brand_input, model_input))
-                    existing_brand = cur.fetchone()
-                    
-                    if existing_brand:
-                        brand_id = existing_brand[0]
-                    else:
-                        cur.execute("INSERT INTO Brand_Model (brand_name, model_name) VALUES (%s, %s) RETURNING brand_id", (brand_input, model_input))
-                        brand_id = cur.fetchone()[0]
+    # Создаем две вкладки
+    tab_clients, tab_services = st.tabs(["👥 Клиенты и Автомобили", "💰 Прайс-лист (Услуги)"])
+    
+    # ---------------- Вкладка 1: Клиенты ----------------
+    with tab_clients:
+        st.markdown("Регистрация новых клиентов и транспортных средств.")
+        with st.form("add_client_car", clear_on_submit=True): 
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**Персональные данные**")
+                fio = st.text_input("ФИО Клиента *")
+                phone = st.text_input("Контактный телефон *")
+            with col2:
+                st.markdown("**Технические параметры ТС**")
+                vin = st.text_input("VIN-код (17 символов) *", max_chars=17)
+                plate = st.text_input("Регистрационный знак *")
+                
+                colA, colB = st.columns(2)
+                with colA: brand_input = st.text_input("Марка *")
+                with colB: model_input = st.text_input("Модель *")
+                
+            if st.form_submit_button("Внести в базу", type="primary"):
+                if fio and phone and vin and plate and brand_input and model_input:
+                    try:
+                        cur = conn.cursor()
+                        cur.execute("SELECT brand_id FROM Brand_Model WHERE brand_name = %s AND model_name = %s", (brand_input, model_input))
+                        existing_brand = cur.fetchone()
                         
-                    # Транзакционное добавление записей в связанные таблицы
-                    complex_query = """
-                    WITH new_client AS (
-                        INSERT INTO Clients (full_name, phone) VALUES (%s, %s) RETURNING client_id
-                    )
-                    INSERT INTO Cars (vin_number, license_plate, brand_id, client_id)
-                    SELECT %s, %s, %s, client_id FROM new_client;
-                    """
-                    cur.execute(complex_query, (fio, phone, vin, plate, brand_id))
-                    
-                    st.success(f"Записи успешно добавлены в структуру БД.")
-                    st.cache_data.clear() 
-                except Exception as e:
-                    st.error(f"Нарушение уникальности или иная ошибка БД: {e}")
-            else:
-                st.warning("Необходимо заполнить все обязательные атрибуты.")
+                        if existing_brand: brand_id = existing_brand[0]
+                        else:
+                            cur.execute("INSERT INTO Brand_Model (brand_name, model_name) VALUES (%s, %s) RETURNING brand_id", (brand_input, model_input))
+                            brand_id = cur.fetchone()[0]
+                            
+                        complex_query = """
+                        WITH new_client AS (INSERT INTO Clients (full_name, phone) VALUES (%s, %s) RETURNING client_id)
+                        INSERT INTO Cars (vin_number, license_plate, brand_id, client_id) SELECT %s, %s, %s, client_id FROM new_client;
+                        """
+                        cur.execute(complex_query, (fio, phone, vin, plate, brand_id))
+                        st.success("Записи успешно добавлены в структуру БД.")
+                        st.cache_data.clear() 
+                    except Exception as e:
+                        st.error(f"Нарушение уникальности (Такой VIN или телефон уже есть): {e}")
+                else:
+                    st.warning("Необходимо заполнить все обязательные атрибуты.")
 
-    st.markdown("---")
-    
-    # Блок просмотра (CRUD - Read)
-    st.subheader("📋 Реестр транспортных средств")
-    if st.button("🔄 Обновить реестр"): st.cache_data.clear()
-    
-    try:
-        # Вывод данных из заранее подготовленного SQL View
-        query_view = """
-        SELECT 
-            car_id AS "ID Авто",
-            full_name AS "ФИО Клиента", 
-            phone AS "Телефон", 
-            license_plate AS "Гос. номер", 
-            vin_number AS "VIN код", 
-            brand_name || ' ' || model_name AS "Марка и Модель"
-        FROM view_client_cars;
-        """
-        df_clients = pd.read_sql(query_view, conn)
-        st.dataframe(df_clients, use_container_width=True, hide_index=True)
-    except Exception as e:
-        st.error(f"Ошибка формирования реестра: {e}")
+        st.markdown("---")
+        st.subheader("📋 Реестр транспортных средств")
+        if st.button("🔄 Обновить реестр"): st.cache_data.clear()
+        try:
+            query_view = "SELECT car_id AS \"ID Авто\", full_name AS \"ФИО Клиента\", phone AS \"Телефон\", license_plate AS \"Гос. номер\", vin_number AS \"VIN код\", brand_name || ' ' || model_name AS \"Марка и Модель\" FROM view_client_cars;"
+            st.dataframe(pd.read_sql(query_view, conn), use_container_width=True, hide_index=True)
+        except Exception as e:
+            st.error(f"Ошибка формирования реестра: {e}")
+
+    # ---------------- Вкладка 2: Прайс-лист ----------------
+    with tab_services:
+        st.markdown("Управление перечнем выполняемых работ и стоимостью нормо-часов.")
+        with st.form("add_service", clear_on_submit=True):
+            svc_name = st.text_input("Наименование работы (Услуги) *")
+            col_s1, col_s2 = st.columns(2)
+            with col_s1:
+                svc_price = st.number_input("Стоимость 1 нормо-часа (руб) *", min_value=100.0, step=100.0, value=1500.0)
+            with col_s2:
+                svc_hours = st.number_input("Норма времени (в часах) *", min_value=0.1, step=0.1, value=1.0)
+                
+            if st.form_submit_button("Добавить в прайс-лист", type="primary"):
+                if svc_name:
+                    try:
+                        conn.cursor().execute("INSERT INTO Services (name, price, norm_hours) VALUES (%s, %s, %s)", (svc_name, svc_price, svc_hours))
+                        st.success(f"Услуга «{svc_name}» успешно добавлена в прайс-лист.")
+                        st.cache_data.clear()
+                    except Exception as e:
+                        st.error(f"Ошибка БД: {e}")
+                else:
+                    st.warning("Укажите наименование выполняемой работы.")
+                    
+        st.markdown("---")
+        st.subheader("📋 Действующий прайс-лист")
+        if st.button("🔄 Обновить прайс"): st.cache_data.clear()
+        try:
+            df_svc = pd.read_sql("SELECT service_id AS \"ID\", name AS \"Наименование работы\", price AS \"Цена за н/ч (руб)\", norm_hours AS \"Норма времени (ч)\" FROM Services ORDER BY service_id;", conn)
+            st.dataframe(df_svc, use_container_width=True, hide_index=True)
+        except Exception as e:
+            st.error(f"Ошибка: {e}")
 
 # ==========================================
 # 4. СКЛАДСКОЙ УЧЕТ
