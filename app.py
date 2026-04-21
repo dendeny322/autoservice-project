@@ -112,7 +112,8 @@ if selected_module == "📊 Рабочий стол":
 elif selected_module == "📄 Документы (Заказы)":
     st.title("📄 Управление заказ-нарядами")
     
-    tab1, tab2, tab3, tab4 = st.tabs(["📋 Журнал", "➕ Открыть заказ", "🔧 Добавить запчасть", "🖨️ Печать Акта"])
+    # ДОБАВИЛИ НОВУЮ ВКЛАДКУ ДЛЯ УСЛУГ
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📋 Журнал", "➕ Открыть", "🛠️ Услуги", "🔧 Запчасти", "🖨️ Печать Акта"])
     
     with tab1:
         if st.button("🔄 Обновить данные"): st.cache_data.clear()
@@ -128,13 +129,11 @@ elif selected_module == "📄 Документы (Заказы)":
                 st.success("Статус заказа успешно обновлен.")
         
         with colB: 
-            # Проверка прав доступа перед операцией удаления (RBAC)
             if st.session_state.role == "Администратор":
                 del_id = st.number_input("№ заказа для УДАЛЕНИЯ", min_value=1, step=1)
                 if st.button("❌ Удалить заказ"):
                     try:
                         cur = conn.cursor()
-                        # Передача текущей роли пользователя в конфигурацию сессии БД для триггера аудита
                         cur.execute(f"SET my.app_role = '{st.session_state.role}';")
                         cur.execute("DELETE FROM Orders WHERE order_id = %s", (del_id,))
                         st.warning("Заказ удален. Запись о действии занесена в журнал аудита.")
@@ -153,31 +152,57 @@ elif selected_module == "📄 Документы (Заказы)":
                 conn.cursor().execute("INSERT INTO Orders (car_id, employee_id) VALUES (%s, %s)", (car_id, emp_id))
                 st.success("Заказ-наряд успешно открыт.")
 
-    with tab3: 
-        st.subheader("Списание ТМЦ со склада")
-        with st.form("add_part"):
-            ord_id = st.number_input("№ Заказ-наряда", min_value=1, step=1)
-            part_id = st.number_input("ID Запчасти", min_value=1, step=1)
-            qty = st.number_input("Количество единиц", min_value=1, step=1)
-            price = st.number_input("Отпускная цена (руб)", min_value=100, step=100)
+    # НОВЫЙ БЛОК: ДОБАВЛЕНИЕ УСЛУГ В ЗАКАЗ
+    with tab3:
+        st.subheader("Внесение выполненных работ (Услуг)")
+        with st.form("add_service"):
+            ord_id_svc = st.number_input("№ Заказ-наряда", min_value=1, step=1, key="svc_ord")
+            svc_id = st.number_input("ID Услуги (из прайс-листа)", min_value=1, step=1)
+            qty_svc = st.number_input("Количество (нормо-часов)", min_value=1.0, step=0.5)
             
-            if st.form_submit_button("Добавить в смету"):
+            if st.form_submit_button("Добавить работу"):
                 try:
-                    conn.cursor().execute("INSERT INTO Order_Parts (order_id, part_id, quantity, current_price) VALUES (%s, %s, %s, %s)", (ord_id, part_id, qty, price))
-                    st.success("Позиция добавлена в смету. Сумма документа пересчитана автоматически.")
+                    conn.cursor().execute("INSERT INTO Order_Services (order_id, service_id, quantity) VALUES (%s, %s, %s)", (ord_id_svc, svc_id, qty_svc))
+                    st.success("Работа добавлена! Сумма документа пересчитана (сработал Триггер 2).")
                 except Exception as e:
-                    st.error(f"Отказ операции (Сработал триггер БД): {e}")
+                    st.error(f"Ошибка БД: {e}")
 
     with tab4: 
-        st.subheader("Формирование печатной формы «Смета»")
-        print_id = st.number_input("Укажите № заказа", min_value=1, step=1)
-        if st.button("Сформировать документ"):
-            query_print = f"SELECT p.article AS \"Артикул\", p.name AS \"Наименование\", op.quantity AS \"Кол-во\", op.current_price AS \"Цена\", (op.quantity * op.current_price) AS \"Сумма\" FROM Order_Parts op JOIN Parts p ON op.part_id = p.part_id WHERE op.order_id = {print_id};"
-            try:
-                st.dataframe(pd.read_sql(query_print, conn), use_container_width=True, hide_index=True)
-            except:
-                st.warning("Смета не содержит позиций.")
+        st.subheader("Списание ТМЦ со склада (Запчасти)")
+        with st.form("add_part"):
+            ord_id_part = st.number_input("№ Заказ-наряда", min_value=1, step=1, key="part_ord")
+            part_id = st.number_input("ID Запчасти", min_value=1, step=1)
+            qty_part = st.number_input("Количество единиц", min_value=1, step=1)
+            price_part = st.number_input("Отпускная цена (руб)", min_value=100, step=100)
+            
+            if st.form_submit_button("Добавить запчасть"):
+                try:
+                    conn.cursor().execute("INSERT INTO Order_Parts (order_id, part_id, quantity, current_price) VALUES (%s, %s, %s, %s)", (ord_id_part, part_id, qty_part, price_part))
+                    st.success("Позиция добавлена в смету.")
+                except Exception as e:
+                    st.error(f"Отказ операции (Сработал триггер склада): {e}")
 
+    # ОБНОВЛЕННЫЙ БЛОК: ПЕЧАТЬ АКТА (показывает и услуги, и запчасти)
+    with tab5: 
+        st.subheader("Формирование печатной формы «Смета»")
+        print_id = st.number_input("Укажите № заказа", min_value=1, step=1, key="print_ord")
+        if st.button("Сформировать документ"):
+            
+            st.markdown("**🛠 Выполненные работы (Услуги):**")
+            query_print_svc = f"SELECT s.name AS \"Наименование\", os.quantity AS \"Нормо-часы\", s.price AS \"Цена н/ч\", (os.quantity * s.price) AS \"Сумма\" FROM Order_Services os JOIN Services s ON os.service_id = s.service_id WHERE os.order_id = {print_id};"
+            try:
+                df_s = pd.read_sql(query_print_svc, conn)
+                if not df_s.empty: st.dataframe(df_s, use_container_width=True, hide_index=True)
+                else: st.info("Работы в заказ не добавлены.")
+            except: pass
+
+            st.markdown("**⚙️ Расходные материалы (Запчасти):**")
+            query_print_parts = f"SELECT p.article AS \"Артикул\", p.name AS \"Наименование\", op.quantity AS \"Кол-во\", op.current_price AS \"Цена\", (op.quantity * op.current_price) AS \"Сумма\" FROM Order_Parts op JOIN Parts p ON op.part_id = p.part_id WHERE op.order_id = {print_id};"
+            try:
+                df_p = pd.read_sql(query_print_parts, conn)
+                if not df_p.empty: st.dataframe(df_p, use_container_width=True, hide_index=True)
+                else: st.info("Запчасти в заказ не добавлены.")
+            except: pass
 # ==========================================
 # 3. СПРАВОЧНИКИ (База клиентов)
 # ==========================================
