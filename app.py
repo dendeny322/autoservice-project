@@ -418,7 +418,7 @@ page_bg_img = """
 <style>
 /* Основной фон страницы */
 [data-testid="stAppViewContainer"] {
-    background-image: url("https://ru.freepik.com/free-photo/car-being-taking-care-workshop_30117831.htm#fromView=keyword&page=1&position=39&uuid=ad00f578-ee9e-4fed-8be2-06b9505e948e&query=%D0%90%D0%B2%D1%82%D0%BE%D0%BC%D0%B0%D1%81%D1%82%D0%B5%D1%80%D1%81%D0%BA%D0%B0%D1%8F+%D1%84%D0%BE%D0%BD");
+    background-image: url("https://i.pinimg.com/originals/47/18/51/471851ab77a4b69cee7ccd67c6407afd.jpg?nii=t");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
